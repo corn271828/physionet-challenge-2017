@@ -8,7 +8,7 @@ import shutil
 SEED = 65536
 random.seed(SEED)
 
-def generate_MCAR(val, proportion=0.1, replace=-9999):
+def generate_MCAR(val, proportion=0.2, replace=-9999):
     """ Returns the input with random entries removed.
    
     val        -- 1D integer numpy array
@@ -28,7 +28,7 @@ def generate_processed_records(processing_function, original_data_directory, new
     original_data_directory -- where to get the validation records (string)
     new_data_directory      -- where to put the new, processed records (string)
     """
-    print(f"Attempting to create new directory {new_data_directory} ...")
+    print(f"Creating new directory {new_data_directory} ...")
     try:
         os.mkdir(new_data_directory)
     except FileExistsError:
@@ -55,6 +55,7 @@ def generate_processed_records(processing_function, original_data_directory, new
             new_record = os.path.join(new_data_directory, f"{line}.mat")
             spio.savemat(new_record, {'val':val2})
 
+            # Print progress
             numprocessed += 1
             if numprocessed % 100 == 0:
                 print(f"{numprocessed} records processed!")
@@ -84,14 +85,27 @@ def impute_mean(val):
             val[i] = average
     return val
     
+def impute_locf(val):
+    """ Returns the input with missing entries (-9999) replaced with the last observation carried forward. """
+    val = val.copy()
+    last_obs = 0
+    for i in range(val.size):
+        if val[i] != -9999:
+            last_obs = val[i]
+            break
+    for i in range(val.size):
+        if val[i] == -9999:
+            val[i] = last_obs
+    return val
+
+
+def full_pipeline():
+    generate_processed_records(generate_MCAR, "validation", "validation-mcar")
+    generate_processed_records(impute_0, "validation-mcar", "validation-0")
+    generate_processed_records(impute_mean, "validation-mcar", "validation-mean")
+    generate_processed_records(impute_locf, "validation-mcar", "validation-locf")
+
 
 if __name__ == "__main__":
     print(f"Current directory: {os.getcwd()}")
-    #generate_processed_records(generate_MCAR, "validation", "validation-mcar")
-    #generate_processed_records(impute_0, "validation-mcar", "validation-0")
-    generate_processed_records(impute_mean, "validation-mcar", "validation-mean")
-
-            #print(line, val.size, sum(np.isnan(val)))
-            #print(np.unique(val, return_counts=True))
-            #print(val.__class__)
-            #print(line, val.size, sum(val2 == -9999))
+    full_pipeline()

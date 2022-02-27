@@ -1,3 +1,4 @@
+function generateValidationSet(current_directory)
 % This script will verify that your code is working as you intended, by
 % running it on a small subset (300 records) of the training data, then
 % comparing the answers.txt file that you submit with your entry with
@@ -14,12 +15,9 @@
 % Last modified by:
 %
 %
-
-clear all;
-close all;
 clc
 
-data_dir = [pwd filesep 'validation-mcar' filesep];
+data_dir = [pwd filesep current_directory filesep];
 
 %% Add this directory to the MATLAB path.
 addpath(pwd)
