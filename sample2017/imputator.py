@@ -22,6 +22,12 @@ def generate_MCAR(val, proportion=0.1, replace=-9999):
     return val
 
 def generate_processed_records(processing_function, original_data_directory, new_data_directory):
+    """ Generates a processed copy of all the physionet challenge 2017 records.
+
+    processing_function     -- function to process the numpy array values (e.g. generate_MCAR) (function: numpy array -> numpy array)
+    original_data_directory -- where to get the validation records (string)
+    new_data_directory      -- where to put the new, processed records (string)
+    """
     print(f"Attempting to create new directory {new_data_directory} ...")
     try:
         os.mkdir(new_data_directory)
@@ -32,18 +38,23 @@ def generate_processed_records(processing_function, original_data_directory, new
     VALIDATION_RECORDS = os.path.join(original_data_directory, "RECORDS")
     shutil.copy(VALIDATION_RECORDS, new_data_directory)
 
-    print("Generating missing data...")
+    print("Generating processed data...")
     with open(VALIDATION_RECORDS) as fs:
         for line in fs:
             line = line.strip()
+            
+            # Copy over the .hea file
+            hea_record = os.path.join(original_data_directory, f"{line}.hea")
+            shutil.copy(hea_record, new_data_directory)
+
+            # Load, process, and write records
             cur_record = os.path.join(original_data_directory, line)
             val = spio.loadmat(cur_record, squeeze_me=True)['val']
-
             val2 = processing_function(val)
             new_record = os.path.join(new_data_directory, f"{line}.mat")
             spio.savemat(new_record, {'val':val2})
-            break
-    print("Missing data generation complete!")
+
+    print("Processed data generation complete!")
         
 if __name__ == "__main__":
     print(f"Current directory: {os.getcwd()}")
