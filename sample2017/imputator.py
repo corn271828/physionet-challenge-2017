@@ -1,14 +1,55 @@
 from pandas import value_counts
 import scipy.io as spio
 import numpy as np
+import random
+import os
+import shutil
 
-CURRENT_DIRECTORY = '/Users/piercewlai/Documents/stuff/urop/physionet-2017-challenge/sample2017/'
-VALIDATION_RECORDS = CURRENT_DIRECTORY + 'validation/RECORDS'
+SEED = 65536
+random.seed(SEED)
 
-with open(VALIDATION_RECORDS) as fs:
-    for line in fs:
-        line = line.strip()
-        val = spio.loadmat(CURRENT_DIRECTORY + 'validation/' + line, squeeze_me=True)['val']
-        print(line, val.size, sum(np.isnan(val)))
-        #print(np.unique(val, return_counts=True))
+def generate_MCAR(val, proportion=0.1, replace=-9999):
+    """ Returns the input with random entries removed.
+   
+    val        -- 1D integer numpy array
+    proportion -- approximate proportion to be removed (default 0.1)
+    replace    -- value to replace entries with (default -9999)
+    """
+    val = val.copy()
+    for i in range(val.size):
+        if random.random() < proportion:
+            val[i] = replace
+    return val
 
+def generate_processed_records(processing_function, original_data_directory, new_data_directory):
+    print(f"Attempting to create new directory {new_data_directory} ...")
+    try:
+        os.mkdir(new_data_directory)
+    except FileExistsError:
+        print("Oops, directory already exists.")
+
+    print("Copying RECORDS...")
+    VALIDATION_RECORDS = os.path.join(original_data_directory, "RECORDS")
+    shutil.copy(VALIDATION_RECORDS, new_data_directory)
+
+    print("Generating missing data...")
+    with open(VALIDATION_RECORDS) as fs:
+        for line in fs:
+            line = line.strip()
+            cur_record = os.path.join(original_data_directory, line)
+            val = spio.loadmat(cur_record, squeeze_me=True)['val']
+
+            val2 = processing_function(val)
+            new_record = os.path.join(new_data_directory, f"{line}.mat")
+            spio.savemat(new_record, {'val':val2})
+            break
+    print("Missing data generation complete!")
+        
+if __name__ == "__main__":
+    print(f"Current directory: {os.getcwd()}")
+    generate_processed_records(generate_MCAR, "validation", "validation-mcar")
+
+            #print(line, val.size, sum(np.isnan(val)))
+            #print(np.unique(val, return_counts=True))
+            #print(val.__class__)
+            #print(line, val.size, sum(val2 == -9999))
