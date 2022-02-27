@@ -131,6 +131,7 @@ try
          -2.357742589814283e-04 -7.757327341237223e-05];
 
     b1 = resample(b1,fs,250);
+    ecg = double(ecg);
     bpfecg = filtfilt(b1,1,ecg)';
     
     if (sum(abs(ecg-median(ecg))>MIN_AMP)/NB_SAMP)>0.05
