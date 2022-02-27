@@ -39,6 +39,7 @@ def generate_processed_records(processing_function, original_data_directory, new
     shutil.copy(VALIDATION_RECORDS, new_data_directory)
 
     print("Generating processed data...")
+    numprocessed = 0
     with open(VALIDATION_RECORDS) as fs:
         for line in fs:
             line = line.strip()
@@ -54,11 +55,41 @@ def generate_processed_records(processing_function, original_data_directory, new
             new_record = os.path.join(new_data_directory, f"{line}.mat")
             spio.savemat(new_record, {'val':val2})
 
+            numprocessed += 1
+            if numprocessed % 100 == 0:
+                print(f"{numprocessed} records processed!")
+
     print("Processed data generation complete!")
         
+def impute_0(val):
+    """ Returns the input with missing entries (-9999) replaced with 0. """
+    val = val.copy()
+    for i in range(val.size):
+        if val[i] == -9999:
+            val[i] = 0
+    return val
+
+def impute_mean(val):
+    """ Returns the input with missing entries (-9999) replaced with the mean of the non-missing entries. """
+    val = val.copy()
+    total = 0
+    number = 0
+    for i in range(val.size):
+        if val[i] != -9999:
+            total += val[i]
+            number += 1
+    average = total // number
+    for i in range(val.size):
+        if val[i] == -9999:
+            val[i] = average
+    return val
+    
+
 if __name__ == "__main__":
     print(f"Current directory: {os.getcwd()}")
-    generate_processed_records(generate_MCAR, "validation", "validation-mcar")
+    #generate_processed_records(generate_MCAR, "validation", "validation-mcar")
+    #generate_processed_records(impute_0, "validation-mcar", "validation-0")
+    generate_processed_records(impute_mean, "validation-mcar", "validation-mean")
 
             #print(line, val.size, sum(np.isnan(val)))
             #print(np.unique(val, return_counts=True))
