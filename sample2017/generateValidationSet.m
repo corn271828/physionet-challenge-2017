@@ -15,8 +15,7 @@ function generateValidationSet(current_directory)
 % Last modified by:
 %
 %
-clc
-
+display(current_directory)
 data_dir = [pwd filesep current_directory filesep];
 
 %% Add this directory to the MATLAB path.
@@ -25,6 +24,7 @@ addpath(pwd)
 %% Check for previous files before starting validation procedure
 answers = dir(['answers.txt']);
 if(~isempty(answers))
+    %{
     while(1)
         display(['Found previous answer sheet file in: ' pwd])
         cont = upper(input('Delete it (Y/N/Q)?','s'));
@@ -37,6 +37,7 @@ if(~isempty(answers))
         end
     end
     display('Removing previous answer sheet.')
+    %}
     delete(answers.name);
 end
 
@@ -64,22 +65,23 @@ for i = 1:length(RECORDS)
     fprintf(fid,'%s,%s\n',RECORDS{i},classifyResult(i));
 
     total_time = total_time+toc;
-    fprintf(['---Processed ' num2str(i) ' out of ' num2str(length(RECORDS)) ' records.\n'])
+    %fprintf(['---Processed ' num2str(i) ' out of ' num2str(length(RECORDS)) ' records.\n'])
 end
 fclose(fid);
 
-averageTime = total_time/length(RECORDS);
-fprintf(['Generation of validation set completed.\n  Total time = ' ...
-    num2str(total_time) '\n  Average time = ' num2str(averageTime) '\n'])
+%averageTime = total_time/length(RECORDS);
+%fprintf(['Generation of validation set completed.\n  Total time = ' ...
+%    num2str(total_time) '\n  Average time = ' num2str(averageTime) '\n'])
 
-fprintf(['Answer file created as answers.txt.\n  Processing completed.\n'])
+%fprintf(['Answer file created as answers.txt.\n  Processing completed.\n'])
 
-fprintf(['Running score2017Challenge.m to get scores on your entry on the validation data in training set....\n'])
+%fprintf(['Running score2017Challenge.m to get scores on your entry on the validation data in training set....\n'])
 
 %% Scoring
 score2017Challenge
 
-fprintf(['Scoring complete.\n'])
+%fprintf(['Scoring complete.\n'])
+%{
 while(1)
     display(['Do you want to package your entry for scoring?'])
     cont=upper(input('(Y/N/Q)?','s'));
@@ -101,3 +103,4 @@ if(strcmp(cont,'Y'))
     % This will not package any sub-directories !
     zip('entry.zip',{'*.m','*.c','*.mat','*.txt','*.sh'});
 end
+%}
