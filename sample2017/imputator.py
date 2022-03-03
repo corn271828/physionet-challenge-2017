@@ -8,6 +8,34 @@ import shutil
 SEED = 65536
 random.seed(SEED)
 
+def get_some_data(original_data_directory, num_files): 
+    """ Helper function to load a small amount of data for testing purposes.
+    Returns a list of numpy arrays.
+
+    original_data_directory -- where to get the records (string)
+    num_files               -- number of files to get
+    """
+
+    VALIDATION_RECORDS = os.path.join(original_data_directory, "RECORDS")
+    ret = []
+
+    print("Generating processed data...")
+    numprocessed = 0
+    with open(VALIDATION_RECORDS) as fs:
+        for line in fs:
+            line = line.strip()
+
+            # Load records
+            cur_record = os.path.join(original_data_directory, line)
+            val = spio.loadmat(cur_record, squeeze_me=True)['val']
+            ret.append(val)
+
+            numprocessed += 1
+            if numprocessed >= num_files:
+                break
+    return ret
+    
+
 def generate_MCAR(val, proportion=0.1, replace=-9999):
     """ Returns the input with random entries removed.
    
@@ -92,6 +120,8 @@ def impute_locf(val):
     for i in range(val.size):
         if val[i] == -9999:
             val[i] = last_obs
+        else:
+            last_obs = val[i]
     return val
 
 def delete_missing(val):
@@ -108,4 +138,4 @@ def full_pipeline():
 if __name__ == "__main__":
     print(f"Current directory: {os.getcwd()}")
     #full_pipeline()
-    generate_processed_records(delete_missing, "validation-mcar", "validation-deleted")
+    generate_processed_records(impute_locf, "validation-mcar", "validation-locf")
