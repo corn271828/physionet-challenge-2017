@@ -3,6 +3,9 @@ import numpy as np
 from imputator import generate_MCAR, get_some_data
 import random
 from preprocessor import Preprocessor
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.linear_model import BayesianRidge
 
 def _generate_train_val_split(N, seed, trainval_ratio=0.8):
     """ Generates two sets of IDs train_ids and val_ids, where IDs are 
@@ -64,19 +67,34 @@ def prepare_imputation_data(data, seed=1001):
 
     return train_data, train_label, val_data, val_label, cuts
 
+def _evalMSE(labels, preds):
+    error = labels - preds
+    return (error ** 2).nansum(axis=-1).mean()
+
 if __name__ == "__main__":
     #data = [np.random.uniform(size=size) for size in range(10, 20)]
     data = get_some_data("training2017", 10)
     print(data)
 
-    train_data, train_label, val_data, val_label, cuts = prepare_imputation_data(data)
-    print(train_data, train_label, val_data, val_label, cuts)
+    train_data, train_label, test_data, test_label, cuts = prepare_imputation_data(data)
+    print(train_data, train_label, test_data, test_label, cuts)
 
     processor = Preprocessor('normal')
     processor.fit(train_data)
     train_data_scaled = processor.preprocess(train_data)
     train_label_scaled  = processor.preprocess(train_label)
-    val_label_scaled  = processor.preprocess(val_label)
+    test_label_scaled  = processor.preprocess(test_label)
 
     print(train_data_scaled)
+
+    print('Preparing model....')
+    estimator = BayesianRidge()
+    imp = IterativeImputer(max_iter=5, random_state=0, estimator=estimator, verbose=True)
+
+    # I don't think MICE is a good model here. I think it would be better to use RNNs. Maybe look into those later.
+    print('Fitting....')
+    imp.fit(train_data)
+    test_data_imputed = imp.transform(test_data)
+    test_output = processor.postprocess_series(test_data_imputed)
+    print('Global Mean Squared Error: {}'.format(_evalMSE(test_output, test_label)))
 
